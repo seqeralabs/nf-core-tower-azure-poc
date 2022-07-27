@@ -1,0 +1,14 @@
+{
+  "workDir" : "az://<AZURE_BLOB_PATH>",
+  "region" : "eastus",
+  "forge" : {
+    "vmType" : "Standard_D32_v3",
+    "vmCount" : 20,
+    "autoScale" : true,
+    "disposeOnDeletion" : true
+  },
+  "deleteJobsOnCompletion" : "always",
+  "deletePoolsOnCompletion" : false,
+  "environment" : [ ],
+  "discriminator" : "azure-batch"
+}

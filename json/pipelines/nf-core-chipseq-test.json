@@ -1,0 +1,14 @@
+{
+  "description" : "ChIP-seq peak-calling, QC and differential analysis pipeline.",
+  "launch" : {
+    "pipeline" : "https://github.com/nf-core/chipseq",
+    "revision" : "1.2.2",
+    "configProfiles" : [ "test" ],
+    "configText" : "process.errorStrategy = 'retry'\nprocess.maxRetries = 5",
+    "paramsText" : "skip_preseq: true\nmax_cpus: 2\nmax_memory: '6.GB'\nmax_time: '3.h'",
+    "preRunScript" : "export CAPSULE_LOG=none",
+    "resume" : false,
+    "pullLatest" : false,
+    "stubRun" : false
+  }
+}

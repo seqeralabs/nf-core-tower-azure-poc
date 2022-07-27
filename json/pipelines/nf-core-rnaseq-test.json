@@ -1,0 +1,14 @@
+{
+  "description" : "RNA sequencing analysis pipeline using STAR, RSEM, HISAT2 or Salmon with gene/isoform counts and extensive quality control.",
+  "launch" : {
+    "pipeline" : "https://github.com/nf-core/rnaseq",
+    "revision" : "3.8.1",
+    "configProfiles" : [ "test" ],
+    "configText" : "process.errorStrategy = 'retry'\nprocess.maxRetries = 5",
+    "paramsText" : "",
+    "preRunScript" : "export CAPSULE_LOG=none",
+    "resume" : false,
+    "pullLatest" : false,
+    "stubRun" : false
+  }
+}

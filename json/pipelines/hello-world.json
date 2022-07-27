@@ -1,0 +1,10 @@
+{
+  "description" : "A proof-of-concept Hello World Nextflow pipeline",
+  "launch" : {
+    "pipeline" : "https://github.com/nextflow-io/hello",
+    "revision" : "master",
+    "resume" : false,
+    "pullLatest" : false,
+    "stubRun" : false
+  }
+}
