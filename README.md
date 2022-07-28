@@ -1,6 +1,6 @@
 # Running nf-core/rnaseq on Azure via Tower
 
-This repo serves as a simple guide with which to get both the minimal and full-sized tests for the nf-core/rnaseq pipeline up and running on the Microsoft Azure Cloud platform via Nextflow Tower.
+This repo serves as a simple guide with which to get both the minimal and full-sized tests for the `nf-core/rnaseq` pipeline up and running on the Microsoft Azure Cloud platform via Nextflow Tower. The same instruction set can be adapted for any other [nf-core pipelines](https://nf-co.re/pipelines).
 
 ## Prerequisites
 
@@ -60,6 +60,18 @@ This Compute Environment has been set-up to provision 20 `Standard_D16_v3` VMs b
 
 Similarly, you can easily create a Compute Environment for 20 `Standard_D32_v3` VMs using [azure_batch_ce_east_us_d32_v3.json](json/compute-envs/azure_batch_ce_east_us_d32_v3.json) by changing `COMPUTE_ENV=azure_batch_ce_east_us_d32_v3` in the example above.
 
+Note that the choice of VM size depends on your Quota and the overall workload during the analysis. Here's a quick reference for the D series. For a thorough list, please refer the [Azure Batch documentation](https://docs.microsoft.com/en-us/azure/batch/batch-pool-vm-sizes)
+
+| Size            | vCPU | Memory (GiB) | Expected network bandwidth (Mbps) |
+| --------------- | ---- | ------------ | --------------------------------- |
+| Standard_D2_v41 | 2    | 8            | 5000                              |
+| Standard_D4_v4  | 4    | 16           | 10000                             |
+| Standard_D8_v4  | 8    | 32           | 12500                             |
+| Standard_D16_v4 | 16   | 64           | 12500                             |
+| Standard_D32_v4 | 32   | 128          | 16000                             |
+| Standard_D48_v4 | 48   | 192          | 24000                             |
+| Standard_D64_v4 | 64   | 256          | 30000                             |
+
 ### Pipelines
 
 Example JSON files for a selection of Pipelines have been included in the [`json/pipelines`](json/pipelines) directory for you to import directly into Tower (see [usage docs](https://github.com/seqeralabs/tower-cli/blob/master/USAGE.md#importingexporting-a-pipeline))
@@ -107,6 +119,63 @@ The Pipeline will become visible for monitoring in the Runs page in the Tower UI
 ## Running full-sized tests
 
 The previous sections highlight how to run the nf-core/rnaseq pipeline on the minimal `test` profile provided with the pipeline. We will now try to run a full-sized and more realistic test on Azure Batch. Before we can run the full-sized tests we need to copy across any reference genome data and input FastQ files to Azure blob storage from S3.
+
+### Authenticating `azcopy` for data migration
+
+To transfer the references as well as the raw FASTQ files from public AWS S3 bucket to your private Azure Storage blob container, you can use the following steps.
+
+- Create a service principal for the appropriate storage account
+
+```bash
+$ SERVICE_PRINCIPAL_NAME="sp-azcopy"
+
+$ STORAGE_ACCOUNT_SCOPE="/subscriptions/<SUBSCRIPTION>/resourceGroups/<RESOURCE_GROUP>/providers/Microsoft.Storage/storageAccounts/<AZURE_STORAGE_ACCOUNT>"
+
+$ az ad sp create-for-rbac \
+ --name $SERVICE_PRINCIPAL_NAME \
+ --role "Storage Blob Data Contributor" \
+ --scopes $STORAGE_ACCOUNT_SCOPE
+
+
+```
+
+- Once the service principal is created, you'll see the `appId` and `password` printed on the screen
+
+```json
+{
+  "appId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "displayName": "sp-azcopy",
+  "password": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "tenant": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+}
+```
+
+- Next, assign necessary roles to the service principal
+
+```bash
+az role assignment create --assignee "<SERVICE_PRINCIPAL_APP_ID>" \
+ --role "Storage Blob Data Owner" \
+ --scope $STORAGE_ACCOUNT_SCOPE
+
+az role assignment create --assignee "<SERVICE_PRINCIPAL_APP_ID>" \
+ --role "Storage Blob Data Contributor" \
+ --scope $STORAGE_ACCOUNT_SCOPE
+
+```
+
+- Login using the newly created service principal
+
+```bash
+export AZCOPY_SPA_CLIENT_SECRET="<SERVICE_PRINCIPAL_PASSWORD>"
+
+azcopy login \
+ --service-principal \
+ --application-id "<SERVICE_PRINCIPAL_APP_ID>" \
+ --tenant-id "<AZURE_TENANT_ID>"
+
+```
+
+- Once the login succeeds, `azcopy` can be used for data migration
 
 ### Genome files
 
