@@ -112,6 +112,7 @@ tw \
     launch \
     --workspace=$WORKSPACE \
     --params-file=<(echo -e "outdir: ${WORK_DIR}/$PIPELINE") \
+    --config=./conf/azure_batch.config \
     $PIPELINE
 ```
 
@@ -244,7 +245,8 @@ DATASET_URL=`tw -o json datasets url --id=$DATASET_ID --workspace=$WORKSPACE | j
 tw \
     launch \
     --workspace=$WORKSPACE \
-    --params-file=<(echo -e "input: $DATASET_URL\noutdir: ${WORK_DIR}/$PIPELINE\nigenomes_base: '<IGENOMES_BASE_PATH>'") \
+    --params-file=<(echo -e "input: $DATASET_URL\noutdir: ${WORK_DIR}/$PIPELINE/retry\nigenomes_base: '<IGENOMES_BASE_PATH>'") \
+    --config=./conf/azure_batch.config \
     $PIPELINE
 ```
 
