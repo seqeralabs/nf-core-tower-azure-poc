@@ -1,6 +1,6 @@
 # Running nf-core/rnaseq on Azure via Tower
 
-This repo serves as a simple guide with which to get both the minimal and full-sized tests for the nf-core/rnaseq pipeline up and running on the Microsoft Azure Cloud platform via Nextflow Tower.
+This repo serves as a simple guide with which to get both the minimal and full-sized tests for the `nf-core/rnaseq` pipeline up and running on the Microsoft Azure Cloud platform via Nextflow Tower. The same instruction set can be adapted for any other [nf-core pipelines](https://nf-co.re/pipelines).
 
 ## Prerequisites
 
@@ -106,6 +106,63 @@ The Pipeline will become visible for monitoring in the Runs page in the Tower UI
 ## Full-sized tests
 
 Before we can run the full-sized tests for the nf-core/rnaseq pipeline we need to copy across any reference genome data and input FastQ files to Azure blob storage from S3.
+
+### Authenticating `azcopy` for data migration
+
+To transfer the references as well as the raw FASTQ files from public AWS S3 bucket to your private Azure Storage blob container, you can use the following steps.
+
+- Create a service principal for the appropriate storage account
+
+```bash
+$ SERVICE_PRINCIPAL_NAME="sp-azcopy"
+
+$ STORAGE_ACCOUNT_SCOPE="/subscriptions/<SUBSCRIPTION>/resourceGroups/<RESOURCE_GROUP>/providers/Microsoft.Storage/storageAccounts/<AZURE_STORAGE_ACCOUNT>"
+
+$ az ad sp create-for-rbac \
+ --name $SERVICE_PRINCIPAL_NAME \
+ --role "Storage Blob Data Contributor" \
+ --scopes $STORAGE_ACCOUNT_SCOPE
+
+
+```
+
+- Once the service principal is created, you'll see the `appId` and `password` printed on the screen
+
+```json
+{
+  "appId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "displayName": "sp-azcopy",
+  "password": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "tenant": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+}
+```
+
+- Next, assign necessary roles to the service principal
+
+```bash
+az role assignment create --assignee "<SERVICE_PRINCIPAL_APP_ID>" \
+ --role "Storage Blob Data Owner" \
+ --scope $STORAGE_ACCOUNT_SCOPE
+
+az role assignment create --assignee "<SERVICE_PRINCIPAL_APP_ID>" \
+ --role "Storage Blob Data Contributor" \
+ --scope $STORAGE_ACCOUNT_SCOPE
+
+```
+
+- Login using the newly created service principal
+
+```bash
+export AZCOPY_SPA_CLIENT_SECRET="<SERVICE_PRINCIPAL_PASSWORD>"
+
+azcopy login \
+ --service-principal \
+ --application-id "<SERVICE_PRINCIPAL_APP_ID>" \
+ --tenant-id "<AZURE_TENANT_ID>"
+
+```
+
+- Once the login succeeds, `azcopy` can be used for data migration
 
 ### Genome files
 
