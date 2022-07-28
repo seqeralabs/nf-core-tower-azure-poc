@@ -6,8 +6,9 @@ This repo serves as a simple guide with which to get both the minimal and full-s
 
 1. Access to [Tower Cloud](https://cloud.tower.nf/) / Tower Enterprise
 2. [Nextflow Tower CLI](https://github.com/seqeralabs/tower-cli#1-installation)
-3. [`azcopy` utility](https://docs.microsoft.com/en-us/azure/storage/common/storage-use-azcopy-v10)
-4. [`jq`](https://stedolan.github.io/jq/)
+3. [`azure-cli`](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
+4. [`azcopy` utility](https://docs.microsoft.com/en-us/azure/storage/common/storage-use-azcopy-v10)
+5. [`jq`](https://stedolan.github.io/jq/)
 
 ## Using the Tower CLI
 
@@ -60,7 +61,7 @@ This Compute Environment has been set-up to provision 20 `Standard_D16_v3` VMs b
 
 Similarly, you can easily create a Compute Environment for 20 `Standard_D32_v3` VMs using [azure_batch_ce_east_us_d32_v3.json](json/compute-envs/azure_batch_ce_east_us_d32_v3.json) by changing `COMPUTE_ENV=azure_batch_ce_east_us_d32_v3` in the example above.
 
-Note that the choice of VM size depends on your Quota and the overall workload during the analysis. Here's a quick reference for the D series. For a thorough list, please refer the [Azure Batch documentation](https://docs.microsoft.com/en-us/azure/batch/batch-pool-vm-sizes)
+Note that the choice of VM size depends on your quota and the overall workload during the analysis. Here's a quick reference for the D series. For a thorough list, please refer the [Azure Batch documentation](https://docs.microsoft.com/en-us/azure/batch/batch-pool-vm-sizes).
 
 | Size            | vCPU | Memory (GiB) | Expected network bandwidth (Mbps) |
 | --------------- | ---- | ------------ | --------------------------------- |
@@ -94,7 +95,7 @@ tw \
 
 This Pipeline has been set-up to use the `test` profile that is available for use with all nf-core pipelines. This instructs the pipeline to download a tiny, minimal dataset to check that it functions in an infrastructure independent manner (see [test data docs](https://nf-co.re/docs/contributing/adding_pipelines#running-with-test-data)). It is always a good idea to run the `test` profile before running the pipeline on actual data. From the commands above, you can also see that the previously created `azure_batch_ce_east_us_d16_v3` Compute Environment will be used to submit the jobs from this Pipeline to Azure Batch.
 
-Most nf-core pipelines also have a `test_full` profile that defines a much larger and realistic dataset with which to test the pipeline. More information regarding the full-sized dataset used by the nf-core/rnaseq pipeline can be found in the [nf-core/testdatasets repo](https://github.com/nf-core/test-datasets/tree/rnaseq#full-test-dataset-origin).
+Most nf-core pipelines also have a `test_full` profile that defines a much larger and realistic dataset with which to test the pipeline. More information regarding the full-sized dataset used by the nf-core/rnaseq pipeline can be found in the [nf-core/testdatasets(https://github.com/nf-core/test-datasets/tree/rnaseq#full-test-dataset-origin) repo.
 
 Similarly, can easily create a Pipeline to run the `test_full` profile using [nf_core_rnaseq_full_test.json](json/pipelines/nf_core_rnaseq_full_test.json) by changing `PIPELINE=nf_core_rnaseq_full_test` in the example above. You will need to add this to run the full-sized tests later in the guide.
 
@@ -122,24 +123,24 @@ The previous sections highlight how to run the nf-core/rnaseq pipeline on the mi
 
 ### Authenticating `azcopy` for data migration
 
-To transfer the references as well as the raw FASTQ files from public AWS S3 bucket to your private Azure Storage blob container, you can use the following steps.
+To transfer the references as well as the raw FastQ files from a public AWS S3 bucket to your private Azure Storage blob container, you can use the following steps:
 
-- Create a service principal for the appropriate storage account
+1. Create a service principal for the appropriate storage account
 
 ```bash
-$ SERVICE_PRINCIPAL_NAME="sp-azcopy"
+SERVICE_PRINCIPAL_NAME="sp-azcopy"
+STORAGE_ACCOUNT_SCOPE="/subscriptions/<SUBSCRIPTION>/resourceGroups/<RESOURCE_GROUP>/providers/Microsoft.Storage/storageAccounts/<AZURE_STORAGE_ACCOUNT>"
 
-$ STORAGE_ACCOUNT_SCOPE="/subscriptions/<SUBSCRIPTION>/resourceGroups/<RESOURCE_GROUP>/providers/Microsoft.Storage/storageAccounts/<AZURE_STORAGE_ACCOUNT>"
-
-$ az ad sp create-for-rbac \
- --name $SERVICE_PRINCIPAL_NAME \
- --role "Storage Blob Data Contributor" \
- --scopes $STORAGE_ACCOUNT_SCOPE
-
-
+az \
+    ad \
+    sp \
+    create-for-rbac \
+    --name $SERVICE_PRINCIPAL_NAME \
+    --role "Storage Blob Data Contributor" \
+    --scopes $STORAGE_ACCOUNT_SCOPE
 ```
 
-- Once the service principal is created, you'll see the `appId` and `password` printed on the screen
+Once the service principal has been created, you will see the `appId` and `password` printed on the screen:
 
 ```json
 {
@@ -150,32 +151,39 @@ $ az ad sp create-for-rbac \
 }
 ```
 
-- Next, assign necessary roles to the service principal
+2. Assign necessary roles to the service principal
 
 ```bash
-az role assignment create --assignee "<SERVICE_PRINCIPAL_APP_ID>" \
- --role "Storage Blob Data Owner" \
- --scope $STORAGE_ACCOUNT_SCOPE
+az \
+    role \
+    assignment \
+    create \
+    --assignee "<SERVICE_PRINCIPAL_APP_ID>" \
+    --role "Storage Blob Data Owner" \
+    --scope $STORAGE_ACCOUNT_SCOPE
 
-az role assignment create --assignee "<SERVICE_PRINCIPAL_APP_ID>" \
- --role "Storage Blob Data Contributor" \
- --scope $STORAGE_ACCOUNT_SCOPE
-
+az \
+    role \
+    assignment \
+    create \
+    --assignee "<SERVICE_PRINCIPAL_APP_ID>" \
+    --role "Storage Blob Data Contributor" \
+    --scope $STORAGE_ACCOUNT_SCOPE
 ```
 
-- Login using the newly created service principal
+3. Login using the newly created service principal
 
 ```bash
 export AZCOPY_SPA_CLIENT_SECRET="<SERVICE_PRINCIPAL_PASSWORD>"
 
-azcopy login \
- --service-principal \
- --application-id "<SERVICE_PRINCIPAL_APP_ID>" \
- --tenant-id "<AZURE_TENANT_ID>"
-
+azcopy \
+    login \
+    --service-principal \
+    --application-id "<SERVICE_PRINCIPAL_APP_ID>" \
+    --tenant-id "<AZURE_TENANT_ID>"
 ```
 
-- Once the login succeeds, `azcopy` can be used for data migration
+Once the login succeeds, `azcopy` can be used for data migration
 
 ### Genome files
 
@@ -200,7 +208,7 @@ azcopy \
 
 ### Adding a Dataset
 
-Once the input data for the nf-core/rnaseq pipeline has been copied to your Azure blob storage replace the `<AZURE_PATH>` placeholders in [`nf_core_rnaseq_samplesheet_full_azure.csv`](assets/nf_core_rnaseq_samplesheet_full_azure.csv) to reflect their location. The input samplesheet for the pipeline can then be added as a Dataset to Tower with which to launch the pipeline (see [docs](https://help.tower.nf/datasets/overview/)). The command below will dump the internal Tower id for the Dataset to a file (i.e. `$DATASET.dataset-id.txt`) which we can use later when launcing the Pipeline.
+Once the input data for the nf-core/rnaseq pipeline has been copied to your Azure blob storage replace the `<AZURE_PATH>` placeholders in [`nf_core_rnaseq_samplesheet_full_azure.csv`](assets/nf_core_rnaseq_samplesheet_full_azure.csv) to reflect their location. The input samplesheet for the pipeline can then be added as a Dataset to Tower with which to launch the pipeline (see [docs](https://help.tower.nf/datasets/overview/)). The command below will create a Dataset in Tower and dump it's internal id to a file (i.e. `$DATASET.dataset-id.txt`) which we can use later when launcing the Pipeline.
 
 ```bash
 WORKSPACE=<TOWER_ORGANISATION>/<TOWER_WORKSPACE>
@@ -221,9 +229,9 @@ tw \
 ### Launch the pipeline
 
 To launch the full-sized tests we need to change a couple of parameters:
-1. `--input` (mandatory): 
+1. `--input` (mandatory): Path to the Dataset URL we created in the previous step.
 2. `--outdir` (mandatory): The value of `WORK_DIR` can be the same value you set for `workDir` when creating the [Compute Environment](#compute-environments).
-3. `--igenomes_base`: Change this to the base directory you specified when copying across the reference files from S3 to Azure blob storage in the [Genome files section](#genome-files)
+3. `--igenomes_base`: Change this to the base directory you specified when copying across the reference files from S3 to Azure blob storage in the [Genome files section](#genome-files).
 
 ```bash
 WORKSPACE=<TOWER_ORGANISATION>/<TOWER_WORKSPACE>
