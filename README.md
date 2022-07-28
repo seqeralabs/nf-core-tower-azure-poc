@@ -59,6 +59,18 @@ This Compute Environment has been set-up to provision 20 `Standard_D16_v3` VMs b
 
 Similarly, you can easily create a Compute Environment for 20 `Standard_D32_v3` VMs using [azure_batch_ce_east_us_d32_v3.json](json/compute-envs/azure_batch_ce_east_us_d32_v3.json) by changing `COMPUTE_ENV=azure_batch_ce_east_us_d32_v3` in the example above.
 
+Note that the choice of VM size depends on your Quota and the overall workload during the analysis. Here's a quick reference for the D series. For a thorough list, please refer the [Azure Batch documentation](https://docs.microsoft.com/en-us/azure/batch/batch-pool-vm-sizes)
+
+| Size            | vCPU | Memory (GiB) | Expected network bandwidth (Mbps) |
+| --------------- | ---- | ------------ | --------------------------------- |
+| Standard_D2_v41 | 2    | 8            | 5000                              |
+| Standard_D4_v4  | 4    | 16           | 10000                             |
+| Standard_D8_v4  | 8    | 32           | 12500                             |
+| Standard_D16_v4 | 16   | 64           | 12500                             |
+| Standard_D32_v4 | 32   | 128          | 16000                             |
+| Standard_D48_v4 | 48   | 192          | 24000                             |
+| Standard_D64_v4 | 64   | 256          | 30000                             |
+
 ### Pipelines
 
 Example JSON files for a selection of Pipelines have been included in the [`json/pipelines`](json/pipelines) directory for you to import directly into Tower (see [usage docs](https://github.com/seqeralabs/tower-cli/blob/master/USAGE.md#importingexporting-a-pipeline))
