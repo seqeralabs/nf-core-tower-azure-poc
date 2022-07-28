@@ -1,5 +1,5 @@
 {
-  "description" : "ChIP-seq peak-calling, QC and differential analysis pipeline.",
+  "description" : "Minimal tests for ChIP-seq peak-calling, QC and differential analysis pipeline.",
   "launch" : {
     "pipeline" : "https://github.com/nf-core/chipseq",
     "revision" : "1.2.2",

@@ -1,7 +1,7 @@
 {
-  "description" : "A single-cell RNAseq pipeline for 10X genomics data.",
+  "description" : "Minimal tests for small-RNA sequencing analysis pipeline.",
   "launch" : {
-    "pipeline" : "https://github.com/nf-core/scrnaseq",
+    "pipeline" : "https://github.com/nf-core/smrnaseq",
     "revision" : "2.0.0",
     "configProfiles" : [ "test" ],
     "configText" : "process.errorStrategy = 'retry'\nprocess.maxRetries = 5",

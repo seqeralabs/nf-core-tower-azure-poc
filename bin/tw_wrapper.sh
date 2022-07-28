@@ -13,7 +13,7 @@ COMPUTE_ENVS_DIR=./compute-envs
 COMPUTE_ENVS=( azure_batch_ce_east_us_d16_v3 azure_batch_ce_east_us_d32_v3 )
 
 PIPELINES_DIR=./pipelines
-PIPELINES=( hello-world nf-core-rnaseq-test nf-core-rnaseq-full-test nf-core-chipseq-test nf-core-scrnaseq-test nf-core-smrnaseq-test )
+PIPELINES=( hello_world nf_core_rnaseq_test nf_core_rnaseq_full_test nf_core_chipseq_test nf_core_scrnaseq_test nf_core_smrnaseq_test )
 
 ###################################################
 ## Import Compute Environment into Tower workspace

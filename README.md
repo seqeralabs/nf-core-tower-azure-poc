@@ -7,10 +7,11 @@ This repo serves as a simple guide with which to get both the minimal and full-s
 1. Access to [Tower Cloud](https://cloud.tower.nf/) / Tower Enterprise
 2. [Nextflow Tower CLI](https://github.com/seqeralabs/tower-cli#1-installation)
 3. [`azcopy` utility](https://docs.microsoft.com/en-us/azure/storage/common/storage-use-azcopy-v10)
+4. [`jq`](https://stedolan.github.io/jq/)
 
 ## Using the Tower CLI
 
-Most Tower entities such as Pipelines, Compute Environments can be exported in JSON format via the Tower CLI. This is very useful for creating infrastructure as code to store the exact configuration options used to create these entities and to share and track changes over time. We will use the Tower CLI to create entities within the Tower UI directly from the command-line.
+Most Tower entities such as Pipelines, Compute Environments etc can be exported in JSON format via the Tower CLI. This is very useful for creating infrastructure as code to store the exact configuration options used to create these entities and to share and track changes over time. We will use the Tower CLI to create entities within the Tower UI directly from the command-line.
 
 Please make sure you have installed and configured the Tower CLI properly. You can check this via the `tw info` command:
 
@@ -63,12 +64,12 @@ Similarly, you can easily create a Compute Environment for 20 `Standard_D32_v3` 
 
 Example JSON files for a selection of Pipelines have been included in the [`json/pipelines`](json/pipelines) directory for you to import directly into Tower (see [usage docs](https://github.com/seqeralabs/tower-cli/blob/master/USAGE.md#importingexporting-a-pipeline))
 
-Using [nf-core-rnaseq-test.json](json/pipelines/nf-core-rnaseq-test.json) as an example:
+Using [nf_core_rnaseq_test.json](json/pipelines/nf_core_rnaseq_test.json) as an example:
 
 ```bash
 WORKSPACE=<TOWER_ORGANISATION>/<TOWER_WORKSPACE>
 COMPUTE_ENV=azure_batch_ce_east_us_d16_v3
-PIPELINE=nf-core-rnaseq-test
+PIPELINE=nf_core_rnaseq_test
 
 tw \
     pipelines \
@@ -83,15 +84,15 @@ This Pipeline has been set-up to use the `test` profile that is available for us
 
 Most nf-core pipelines also have a `test_full` profile that defines a much larger and realistic dataset with which to test the pipeline. More information regarding the full-sized dataset used by the nf-core/rnaseq pipeline can be found in the [nf-core/testdatasets repo](https://github.com/nf-core/test-datasets/tree/rnaseq#full-test-dataset-origin).
 
-Similarly, you can easily create a Pipeline to run the `test_full` profile using [nf-core-rnaseq-full-test.json](json/pipelines/nf-core-rnaseq-full-test.json) by changing `PIPELINE=nf-core-rnaseq-full-test` in the example above.
+Similarly, can easily create a Pipeline to run the `test_full` profile using [nf_core_rnaseq_full_test.json](json/pipelines/nf_core_rnaseq_full_test.json) by changing `PIPELINE=nf_core_rnaseq_full_test` in the example above. You will need to add this to run the full-sized tests later in the guide.
 
 ### Launcing Pipelines
 
-Now that we have created Compute Environment and associated this to a Pipeline we can launch it via the Tower CLI. The `--outdir` parameter is mandatory when running the nf-core/rnaseq pipeline so we will define it here on the CLI.
+Now that we have created a Compute Environment and associated this to a Pipeline we can launch it via the Tower CLI. The `--outdir` parameter is mandatory when running the nf-core/rnaseq pipeline so we will define it here on the CLI. The value of `WORK_DIR` can be the same value you set for `workDir` when creating the [Compute Environment](#compute-environments).
 
 ```bash
 WORKSPACE=<TOWER_ORGANISATION>/<TOWER_WORKSPACE>
-PIPELINE=nf-core-rnaseq-test
+PIPELINE=nf_core_rnaseq_test
 WORK_DIR=<WORK_DIRECTORY>
 
 tw \
@@ -103,9 +104,9 @@ tw \
 
 The Pipeline will become visible for monitoring in the Runs page in the Tower UI almost instantly.
 
-## Full-sized tests
+## Running full-sized tests
 
-Before we can run the full-sized tests for the nf-core/rnaseq pipeline we need to copy across any reference genome data and input FastQ files to Azure blob storage from S3.
+The previous sections highlight how to run the nf-core/rnaseq pipeline on the minimal `test` profile provided with the pipeline. We will now try to run a full-sized and more realistic test on Azure Batch. Before we can run the full-sized tests we need to copy across any reference genome data and input FastQ files to Azure blob storage from S3.
 
 ### Genome files
 
@@ -130,4 +131,45 @@ azcopy \
 
 ### Adding a Dataset
 
-Once the full-sized input data for the nf-core/rnaseq pipelin has been copied to your Azure blob storage replace the `<AZURE_PATH>` placeholders in [`assets/nf-core_rnaseq_samplesheet_full.csv`](assets/nf-core_rnaseq_samplesheet_full.csv).
+Once the input data for the nf-core/rnaseq pipeline has been copied to your Azure blob storage replace the `<AZURE_PATH>` placeholders in [`nf_core_rnaseq_samplesheet_full_azure.csv`](assets/nf_core_rnaseq_samplesheet_full_azure.csv) to reflect their location. The input samplesheet for the pipeline can then be added as a Dataset to Tower with which to launch the pipeline (see [docs](https://help.tower.nf/datasets/overview/)). The command below will dump the internal Tower id for the Dataset to a file (i.e. `$DATASET.dataset-id.txt`) which we can use later when launcing the Pipeline.
+
+```bash
+WORKSPACE=<TOWER_ORGANISATION>/<TOWER_WORKSPACE>
+DATASET=nf_core_rnaseq_samplesheet_full_azure
+
+tw \
+    -o json \
+    datasets \
+    add \
+    --workspace=$WORKSPACE \
+    --name=$DATASET \
+    --description='Samplesheet containing links to full-sized data required to test the nf-core/rnaseq pipeline from end-to-end' \
+    --header \
+    ./assets/$DATASET.csv | \
+    jq -r .datasetId > $DATASET.dataset-id.txt
+```
+
+### Launch the pipeline
+
+To launch the full-sized tests we need to change a couple of parameters:
+1. `--input` (mandatory): 
+2. `--outdir` (mandatory): The value of `WORK_DIR` can be the same value you set for `workDir` when creating the [Compute Environment](#compute-environments).
+3. `--igenomes_base`: Change this to the base directory you specified when copying across the reference files from S3 to Azure blob storage in the [Genome files section](#genome-files)
+
+```bash
+WORKSPACE=<TOWER_ORGANISATION>/<TOWER_WORKSPACE>
+PIPELINE=nf_core_rnaseq_full_test
+WORK_DIR=<WORK_DIRECTORY>
+DATASET=nf_core_rnaseq_samplesheet_full_azure
+DATASET_ID=`cat $DATASET.dataset-id.txt`
+DATASET_URL=`tw -o json datasets url --id=$DATASET_ID --workspace=$WORKSPACE | jq -r .datasetUrl`
+
+tw \
+    launch \
+    --workspace=$WORKSPACE \
+    --params-file=<(echo -e "input: $DATASET_URL\noutdir: ${WORK_DIR}/$PIPELINE\nigenomes_base: '<IGENOMES_BASE_PATH>'") \
+    $PIPELINE
+```
+
+The Pipeline will become visible for monitoring in the Runs page in the Tower UI almost instantly.
+
