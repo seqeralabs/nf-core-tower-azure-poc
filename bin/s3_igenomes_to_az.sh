@@ -10,6 +10,7 @@ AZURE_BLOB_DIR='https://<AZURE_STORAGE_ACCOUNT>.blob.core.windows.net/igenomes/'
 declare -A IGENOMES
 IGENOMES['GRCh37']=Homo_sapiens/Ensembl/GRCh37
 #IGENOMES['GRCm38']=Mus_musculus/Ensembl/GRCm38
+#IGENOMES['CanFam3.1']=Canis_familiaris/Ensembl/CanFam3.1
 #IGENOMES['EB2']=Bacillus_subtilis_168/Ensembl/EB2  ## Small genome for testing purposes
 
 # List of files on AWS iGenomes to transfer
