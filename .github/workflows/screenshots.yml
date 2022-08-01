@@ -1,5 +1,7 @@
 name: Rich-codex
-on: [push]
+on:
+  push:
+    - master
 jobs:
   rich_codex:
     runs-on: ubuntu-latest
