@@ -16,24 +16,8 @@ Most Tower entities such as Pipelines, Compute Environments etc can be exported 
 
 Please make sure you have installed and configured the Tower CLI properly. You can check this via the `tw info` command:
 
-```console
-$ tw info
+![`tw info`](./assets/img/tw-info.svg)
 
-    Details
-    -------------------------+----------------------
-     Tower API endpoint      | https://api.tower.nf 
-     Tower API version       | 1.12.0               
-     Tower version           | 22.2.0-newton        
-     CLI version             | 0.6.0 (a1bf815)      
-     CLI minimum API version | 1.9                  
-     Authenticated user      | joebloggs            
-
-    System health status
-    ---------------------------------------+----
-     Remote API server connection check    | OK 
-     Tower API version check               | OK 
-     Authentication API credential's token | OK 
-```
 
 ### Compute Environments
 
